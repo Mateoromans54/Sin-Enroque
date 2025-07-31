@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sin Enroque</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css"
+    />
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #0d47a1, #1976d2);
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        header img {
+            width: 60px;
+            height: 60px;
+        }
+        header h1 {
+            font-size: 2.5rem;
+            margin: 0;
+        }
+        #menu {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        #board {
+            width: 450px;
+            margin-bottom: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 5px solid white;
+            border-radius: 10px;
+        }
+        .white-1e1d7 {
+            background-color: #e3f2fd !important;
+        }
+        .black-3c85d {
+            background-color: #1565c0 !important;
+        }
+        button, select {
+            margin: 5px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            background: white;
+            color: #0d47a1;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        button:hover, select:hover {
+            background: #bbdefb;
+            color: #0d47a1;
+        }
+        select {
+            appearance: none;
+        }
+        #openings-section {
+            max-width: 480px;
+            margin: 0 auto 20px;
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+        }
+        #opening-info h3 {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <img src="https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_klt45.svg" alt="Logo Sin Enroque" />
+        <h1>Sin Enroque</h1>
+    </header>
+
+    <div id="menu">
+        <label for="difficulty">Nivel de IA:</label>
+        <select id="difficulty">
+            <option value="1">Nivel 1 (Muy Fácil)</option>
+            <option value="5">Nivel 5 (Fácil)</option>
+            <option value="10">Nivel 10 (Medio)</option>
+            <option value="15">Nivel 15 (Difícil)</option>
+            <option value="20">Nivel 20 (Maestro)</option>
+        </select>
+        <button onclick="resetGame()">Reiniciar</button>
+        <button onclick="showOpenings()">Estudiar Aperturas</button>
+    </div>
+
+    <div id="openings-section">
+        <h2>Aperturas para estudiar</h2>
+        <select id="openings-select">
+            <option value="">-- Selecciona una apertura --</option>
+            <option value="colle">Sistema Colle</option>
+            <option value="enigmatico">Sistema Enigmático del Rey</option>
+            <option value="india">India de Rey</option>
+            <option value="sicilianaDragon">Siciliana Variante Dragón</option>
+        </select>
+        <div id="opening-info">
+            <p>Selecciona una apertura para ver detalles aquí.</p>
+        </div>
+        <button onclick="backToGame()">Volver al juego</button>
+    </div>
+
+    <div id="board"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stockfish/stockfish.js"></script>
+    <script>
+        var board = null;
+        var game = new Chess();
+        var engine = Stockfish();
+        var difficulty = 1;
+
+        const openingsData = {
+            colle: {
+                name: "Sistema Colle",
+                description: `El Sistema Colle es una apertura sólida para blancas que se caracteriza por un desarrollo armonioso y seguro. La idea principal es jugar d4, Cf3 y e3, seguido de c3, con el fin de preparar el avance d4-d5 y mantener un fuerte centro.
+
+Esta apertura es muy popular entre jugadores amateurs y de club debido a su simplicidad y solidez. Se evita entrar en complicaciones tácticas tempranas, buscando un juego estratégico y posición estable.
+
+Variante típica:
+1.d4 d5 2.Cf3 Cf6 3.e3 e6 4.c3 c5
+
+Ventajas:
+- Desarrollo fácil y seguro.
+- Buen control del centro.
+- Preparación para un eventual ataque en el flanco de rey.
+
+Desventajas:
+- Puede ser pasiva si no se busca la iniciativa activamente.
+                `,
+                fen: "rnbqkbnr/pppppppp/8/8/3P4/5N2/PPP1PPPP/RNBQKB1R w KQkq - 0 1",
+                mainLine: ["d4", "Cf3", "e3", "c3"]
+            },
+            enigmatico: {
+                name: "Sistema Enigmático del Rey",
+                description: `El Sistema Enigmático del Rey es una variante poco convencional que combina movimientos clásicos con planes flexibles. Las blancas juegan e4 y Cf3 buscando controlar el centro y mantener opciones tácticas.
+
+Es un sistema que puede sorprender a oponentes poco preparados, con posibilidades tanto para juego posicional como táctico.
+
+Variante típica:
+1.e4 e5 2.Cf3 Cc6 3.d4 exd4 4.Cxd4
+
+Ventajas:
+- Juego activo y dinámico.
+- Buena preparación para transiciones tácticas.
+
+Desventajas:
+- Puede conducir a líneas muy teóricas y tácticas que requieren buen conocimiento.
+                `,
+                fen: "rnbqkbnr/pppppppp/8/8/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 1",
+                mainLine: ["e4", "Cf3"]
+            },
+            india: {
+                name: "India de Rey",
+                description: `La Defensa India de Rey es una defensa dinámica para negras, caracterizada por un rápido desarrollo de las piezas menores y un juego agresivo en el centro y flanco de rey.
+
+Las negras suelen jugar Cf6, g6 y Ag7 buscando controlar las casillas centrales y preparar un contraataque.
+
+Variante típica:
+1.d4 Cf6 2.c4 g6 3.Cc3 Ag7
+
+Ventajas:
+- Juego activo para negras.
+- Contrajuego en el centro y flancos.
+
+Desventajas:
+- Puede ser vulnerable a ataques rápidos si no se maneja bien.
+                `,
+                fen: "rnbqk2r/pppp1ppp/5n2/4p3/8/5NP1/PPPPPP1P/RNBQKB1R b KQkq - 0 1",
+                mainLine: ["Cf6", "g6"]
+            },
+            sicilianaDragon: {
+                name: "Siciliana Variante Dragón",
+                description: `La Variante Dragón de la Defensa Siciliana es una de las líneas más agresivas y teóricas en el ajedrez.
+
+Se caracteriza por un fianchetto del alfil de rey de las negras (Ag7), buscando un fuerte control de la diagonal larga y presionando el centro y el flanco de rey.
+
+Variante típica:
+1.e4 c5 2.Cf3 d6 3.d4 cxd4 4.Cxd4 Cf6 5.Cc3 g6
+
+Ventajas:
+- Juego dinámico y táctico para negras.
+- Fuerte presión en el flanco de rey.
+
+Desventajas:
+- Requiere conocimiento teórico para evitar trampas tácticas.
+                `,
+                fen: "rnbq1rk1/pp2ppbp/2p2np1/8/2PN4/2N1P3/PPP2PPP/R1BQ1RK1 w - - 0 1",
+                mainLine: ["e4", "c5", "Cf3", "d6", "d4", "cxd4", "Cxd4", "Cf6", "Cc3", "g6"]
+            }
+        };
+
+        document.getElementById('difficulty').addEventListener('change', function () {
+            difficulty = parseInt(this.value);
+            engine.postMessage('setoption name Skill Level value ' + difficulty);
+        });
+
+        engine.postMessage('uci');
+        engine.postMessage('setoption name Skill Level value ' + difficulty);
+
+        engine.onmessage = function (event) {
+            var line = event.data;
+            if (line.startsWith('bestmove')) {
+                var move = line.split(' ')[1];
+                game.move({ from: move.substring(0, 2), to: move.substring(2, 4), promotion: 'q' });
+                board.position(game.fen());
+            }
+        };
+
+        function makeBestMove() {
+            engine.postMessage('position fen ' + game.fen());
+            engine.postMessage('go depth 15');
+        }
+
+        function onDragStart(source, piece) {
+            if (game.game_over() || piece.search(/^b/) !== -1) return false;
+        }
+
+        function onDrop(source, target) {
+            var move = game.move({ from: source, to: target, promotion: 'q' });
+            if (move === null) return 'snapback';
+            window.setTimeout(makeBestMove, 250);
+        }
+
+        function onSnapEnd() {
+            board.position(game.fen());
+        }
+
+        function resetGame() {
+            game.reset();
+            board.position('start');
+        }
+
+        function showOpenings() {
+            document.getElementById('menu').style.display = 'none';
+            document.getElementById('openings-section').style.display = 'block';
+            document.getElementById('board').style.display = 'block';
+            resetGame();
+        }
+
+        const openingsSelect = document.getElementById('openings-select');
+        const openingInfo = document.getElementById('opening-info');
+        const menuDiv = document.getElementById('menu');
+        const boardDiv = document.getElementById('board');
+        const openingsSection = document.getElementById('openings-section');
+
+        openingsSelect.addEventListener('change', () => {
+            const val = openingsSelect.value;
+            if (!val) {
+                openingInfo.innerHTML = '<p>Selecciona una apertura para ver detalles aquí.</p>';
+                return;
+            }
+            const data = openingsData[val];
+            openingInfo.innerHTML = `
+                <h3>${data.name}</h3>
+                <p style="white-space: pre-line;">${data.description}</p>
+                <button onclick="playOpening('${val}')">Ver posición</button>
+            `;
+        });
+
+        function playOpening(openingKey) {
+            const data = openingsData[openingKey];
+            menuDiv.style.display = 'none';
+            openingsSection.style.display = 'none';
+            boardDiv.style.display = 'block';
+            game.load(data.fen);
+            board.position(data.fen);
+        }
+
+        function backToGame() {
+            openingsSection.style.display = 'none';
+            menuDiv.style.display = 'flex';
+            boardDiv.style.display = 'block';
+            resetGame();
+        }
+
+        var config = {
+            draggable: true,
+            position: 'start',
+            onDragStart: onDragStart,
+            onDrop: onDrop,
+            onSnapEnd: onSnapEnd
+        };
+        board = Chessboard('board', config);
+    </script>
+</body>
+</html>
